@@ -251,7 +251,7 @@ def grupo(col: str) -> str:
 class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Detector de deserción estudiantil")
+        self.title("ClasificadorDesertor")
         self.geometry("1280x800")
         self.minsize(1120, 720)
         self.configure(bg=BG)

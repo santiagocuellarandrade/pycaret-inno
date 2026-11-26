@@ -1,7 +1,7 @@
 # Receta de PyInstaller para crear el ejecutable de la app.
 #
-# Uso (desde la raíz del proyecto):   uv run pyinstaller ClasificadorIris.spec --noconfirm
-# Resultado:                          dist/ClasificadorIris/ClasificadorIris.exe
+# Uso (desde la raíz del proyecto):   uv run pyinstaller ClasificadorDesertor.spec --noconfirm
+# Resultado:                          dist/ClasificadorDesertor/ClasificadorDesertor.exe
 #
 # Usamos el modo "carpeta" (onedir) y no --onefile: con PyCaret el .exe único
 # tarda mucho en abrir porque cada vez descomprime cientos de MB. Inno Setup
@@ -11,7 +11,7 @@ from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all, collect_data_files, copy_metadata
 
-NOMBRE = "ClasificadorIris"
+NOMBRE = "ClasificadorDesertor"
 ICONO = Path("assets/icono.ico")
 
 # Archivos que el ejecutable necesita: el modelo entrenado y el icono
@@ -71,4 +71,4 @@ coll = COLLECT(exe, a.binaries, a.datas, name=NOMBRE)
 import sys  # noqa: E402
 
 if sys.platform == "darwin":
-    app = BUNDLE(coll, name=f"{NOMBRE}.app", bundle_identifier="co.edu.clasificadoriris")
+    app = BUNDLE(coll, name=f"{NOMBRE}.app", bundle_identifier="co.edu.clasificadordesertor")

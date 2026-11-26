@@ -18,7 +18,7 @@ if (-not (Test-Path "assets\icono.ico")) {
 }
 
 Write-Host "`n[1/2] Creando el ejecutable con PyInstaller..." -ForegroundColor Cyan
-uv run pyinstaller ClasificadorIris.spec --noconfirm
+uv run pyinstaller ClasificadorDesertor.spec --noconfirm
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "`n[2/2] Creando el instalador con Inno Setup..." -ForegroundColor Cyan
@@ -30,10 +30,10 @@ $iscc = @(
 
 if (-not $iscc) {
     Write-Host "No encontré Inno Setup 6. Instálalo desde https://jrsoftware.org/isdl.php" -ForegroundColor Yellow
-    Write-Host "o abre instalador\ClasificadorIris.iss y presiona Compile." -ForegroundColor Yellow
+    Write-Host "o abre instalador\ClasificadorDesertor.iss y presiona Compile." -ForegroundColor Yellow
     exit 1
 }
-& $iscc "instalador\ClasificadorIris.iss"
+& $iscc "instalador\ClasificadorDesertor.iss"
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host "`nListo: instalador\salida\" -ForegroundColor Green

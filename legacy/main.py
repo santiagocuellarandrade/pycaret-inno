@@ -3,11 +3,11 @@ from tkinter import messagebox
 from functions import predict_species
 
 root = tk.Tk()
-root.title("Clasificador de Flores Iris")
+root.title("ClasificadorDesertor")
 root.geometry("400x400")
 
 # Etiqueta principal
-tk.Label(root, text="Clasificador de Iris", font=("Arial", 20)).pack(pady=10)
+tk.Label(root, text="ClasificadorDesertor", font=("Arial", 20)).pack(pady=10)
 
 # Entradas de características
 entries = {}

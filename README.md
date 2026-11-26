@@ -30,10 +30,10 @@ los datos, comparamos modelos, escogemos uno y lo exportamos. La app usa el mode
   Cierra PowerShell y ábrelo de nuevo después de instalarlo.
 - **Inno Setup 6** (solo para el paso 9): descárgalo de <https://jrsoftware.org/isdl.php>.
 - Los archivos que te entregó el profesor:
-  - `requirements.txt`, `license.txt`, `ClasificadorIris.spec` y `construir.ps1`
+  - `requirements.txt`, `license.txt`, `ClasificadorDesertor.spec` y `construir.ps1`
   - los **3 archivos `.py`** de la carpeta `src/clasificador_desertores/`
   - la carpeta `notebooks/` (con `entrenamiento_pycaret.ipynb`)
-  - la carpeta `instalador/` (con `ClasificadorIris.iss`)
+  - la carpeta `instalador/` (con `ClasificadorDesertor.iss`)
   - (opcional) la carpeta `legacy/`
 - **VS Code** con las extensiones *Python* y *Jupyter* (para el cuaderno).
 
@@ -92,11 +92,11 @@ Copia los archivos a estas ubicaciones. Cuando te pregunte si quieres reemplazar
 
 ```
 clasificador-desertores/
-├── ClasificadorIris.spec        ← receta de PyInstaller
+├── ClasificadorDesertor.spec    ← receta de PyInstaller
 ├── construir.ps1                ← hace los pasos 8 y 9 de una vez
 ├── license.txt                  ← licencia que muestra el instalador
 ├── instalador/
-│   └── ClasificadorIris.iss     ← receta de Inno Setup
+│   └── ClasificadorDesertor.iss     ← receta de Inno Setup
 ├── notebooks/
 │   └── entrenamiento_pycaret.ipynb   ← explora, entrena y exporta el modelo
 └── src/clasificador_desertores/
@@ -193,18 +193,18 @@ Lo usan tres cosas: la ventana de la app, el `.exe` y el instalador.
 ### Paso 8 · Crear el ejecutable con PyInstaller
 
 ```powershell
-uv run pyinstaller ClasificadorIris.spec --noconfirm
+uv run pyinstaller ClasificadorDesertor.spec --noconfirm
 ```
 
 Tarda unos minutos. El resultado queda en:
 
 ```
-dist/ClasificadorIris/
-├── ClasificadorIris.exe     ← doble clic para probar
+dist/ClasificadorDesertor/
+├── ClasificadorDesertor.exe  ← doble clic para probar
 └── _internal/               ← Python, PyCaret, el modelo... (no se toca)
 ```
 
-Haz doble clic en `ClasificadorIris.exe` para comprobar que funciona **antes** de crear el instalador.
+Haz doble clic en `ClasificadorDesertor.exe` para comprobar que funciona **antes** de crear el instalador.
 
 > **¿Por qué una carpeta y no un solo `.exe` (`--onefile`)?** Con `--onefile`, cada vez que abres
 > el programa Windows descomprime cientos de MB de PyCaret en una carpeta temporal: tarda mucho
@@ -219,10 +219,10 @@ Haz doble clic en `ClasificadorIris.exe` para comprobar que funciona **antes** d
 ### Paso 9 · Crear el instalador con Inno Setup
 
 1. Abre **Inno Setup Compiler**.
-2. *File → Open* → `instalador/ClasificadorIris.iss`.
+2. *File → Open* → `instalador/ClasificadorDesertor.iss`.
 3. *Build → Compile* (o **Ctrl + F9**).
 
-El instalador queda en `instalador/salida/ClasificadorIris_Setup_1.0.0.exe`. Ese único archivo es
+El instalador queda en `instalador/salida/ClasificadorDesertor_Setup_1.0.0.exe`. Ese único archivo es
 el que compartes: cualquiera lo instala con doble clic, **sin tener Python ni uv**.
 El instalador está en español, muestra la licencia, crea el acceso en el menú Inicio (y en el
 escritorio si el usuario quiere) y aparece en *Agregar o quitar programas* para desinstalarlo.
@@ -247,7 +247,7 @@ escritorio si el usuario quiere) y aparece en *Agregar o quitar programas* para 
 | Solo la interfaz (`app.py`) | Paso 8 → 9 |
 | El icono, la licencia o la versión | Paso 8 → 9 |
 
-Para una nueva versión cambia `MyAppVersion` en `instalador/ClasificadorIris.iss` y `APP_VERSION`
+Para una nueva versión cambia `MyAppVersion` en `instalador/ClasificadorDesertor.iss` y `APP_VERSION`
 en `app.py`. **No** cambies el `AppId`: así Windows actualiza la versión anterior en vez de instalar otra copia.
 
 ---
@@ -261,7 +261,7 @@ clasificador-desertores/
 ├── requirements.txt
 ├── .python-version             ← 3.10
 ├── .venv/                      ← entorno virtual (lo crea uv)
-├── ClasificadorIris.spec       ← receta de PyInstaller
+├── ClasificadorDesertor.spec   ← receta de PyInstaller
 ├── construir.ps1               ← construye todo de una vez
 ├── license.txt
 ├── assets/icono.ico            ← lo pones tú (paso 7)
@@ -271,10 +271,10 @@ clasificador-desertores/
 │   └── metricas.json
 ├── src/clasificador_desertores/      ← el código
 ├── build/                      ← temporal de PyInstaller (se puede borrar)
-├── dist/ClasificadorIris/      ← lo crea el paso 8
+├── dist/ClasificadorDesertor/  ← lo crea el paso 8
 └── instalador/
-    ├── ClasificadorIris.iss
-    └── salida/ClasificadorIris_Setup_1.0.0.exe   ← lo crea el paso 9
+    ├── ClasificadorDesertor.iss
+    └── salida/ClasificadorDesertor_Setup_1.0.0.exe ← lo crea el paso 9
 ```
 
 ---
@@ -300,7 +300,7 @@ Todo funciona igual, salvo que el **paso 9 (Inno Setup) es solo para Windows**. 
 - PyCaret usa LightGBM, que en Mac necesita una librería extra. Si `setup()` falla en el cuaderno con
   `Library not loaded: @rpath/libomp.dylib`, instálala con [Homebrew](https://brew.sh): `brew install libomp`.
 - Para el paso 8 necesitas las herramientas de desarrollo: `xcode-select --install`. El resultado
-  es `dist/ClasificadorIris.app`.
+  es `dist/ClasificadorDesertor.app`.
 - Cada sistema operativo compila su propio ejecutable: en Mac **no** se puede crear el `.exe` de Windows.
 
 ---
