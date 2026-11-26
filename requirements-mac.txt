@@ -1,0 +1,33 @@
+# ================================
+# Instalación de PyCaret en Mac
+# Paso a paso desde Homebrew hasta LightGBM
+# ================================
+
+# 1️⃣ Instalar Homebrew (si no lo tienes)
+# Ejecutar en Terminal
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+
+# Agregar brew al PATH (muy importante en M1/M2)
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# Verificar que brew esté instalado
+brew --version
+
+# 2️⃣ Instalar libomp (necesario para LightGBM)
+brew install libomp
+
+# 3️⃣ Crear un entorno limpio con Python 3.10 en Anaconda
+# Cambiar "pycaret_env" por el nombre que quieras
+conda create -n pycaret_env python=3.10
+conda activate pycaret_env
+
+# 4️⃣ Configurar conda para usar conda-forge prioritario
+conda config --env --set channel_priority strict
+
+# 5️⃣ Instalar LightGBM desde conda-forge
+conda install -c conda-forge lightgbm
+
+# ✅ En este punto LightGBM está listo y PyCaret puede instalarse
+# Para instalar PyCaret:
+pip install pycaret

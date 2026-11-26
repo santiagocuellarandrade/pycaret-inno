@@ -1,0 +1,11 @@
+#pyinstaller --name Iris_Classifier --onefile --windowed --icon=logo\logo.ico main.py
+
+
+pyinstaller --name Iris_Classifier ^
+--onefile ^
+--windowed ^
+--icon=logo\logo.ico ^
+--add-data "modelo\best_iris_classifier.pkl;modelo" ^
+--add-data "C:\Users\jgiraldo\AppData\Local\miniforge\envs\clase_4\lib\site-packages\imblearn\VERSION.txt;imblearn" ^
+main.py
+
