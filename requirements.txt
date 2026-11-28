@@ -1,2 +1,4 @@
 pycaret
 customtkinter
+seaborn
+ucimlrepo

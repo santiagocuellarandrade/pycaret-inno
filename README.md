@@ -1,18 +1,36 @@
-# 🌸 De PyCaret a instalador de Windows: clasificador de flores Iris
+# 🎓 De PyCaret a instalador de Windows: Clasificador de deserción estudiantil
 
-Entrenamos un modelo con **PyCaret**, lo exportamos y lo usamos en una **app de escritorio
+Entrenamos un modelo con **PyCaret** para predecir si un estudiante universitario va a **desertar**,
+seguirá **matriculado** o se **graduará**. Lo exportamos y lo usamos en una **app de escritorio
 profesional** hecha con **CustomTkinter**. Al final la convertimos en un programa de Windows
 de verdad: un `.exe` con **PyInstaller** y un instalador `Setup.exe` con **Inno Setup**.
 
 ```
- cuaderno (PyCaret) ──► modelo_iris.pkl ──► app (CustomTkinter) ──► .exe (PyInstaller) ──► Setup.exe (Inno Setup)
+ cuaderno (PyCaret) ──► modelo_desercion.pkl ──► app (CustomTkinter) ──► .exe (PyInstaller) ──► Setup.exe (Inno Setup)
 ```
 
 El entrenamiento es una **fase exploratoria**: se hace en un cuaderno de Jupyter, donde miramos
-los datos, comparamos modelos, escogemos uno y lo exportamos. La app usa el modelo que exporte el cuaderno.
+los datos, comparamos preprocesamientos y modelos, escogemos uno, calibramos sus probabilidades y lo exportamos.
+La app usa el modelo que exporte el cuaderno.
 
 > 💡 **Idea clave:** el modelo (`core.py`) está separado de la interfaz (`app.py`).
-> La app solo lee las medidas que escoge el usuario, llama a `predecir_especie()` y muestra el resultado.
+> La app solo lee los datos del estudiante que escribe el usuario, llama a `predecir_estudiante()` y muestra
+> la clase más probable y la probabilidad de cada resultado.
+
+---
+
+## 📊 El problema y los datos
+
+- **Tarea:** clasificación multiclase. Para cada estudiante se predice una de tres clases:
+  `Dropout` (deserta), `Enrolled` (sigue matriculado) o `Graduate` (se gradúa) al final de la duración normal del programa.
+- **Datos:** dataset público de Realinho et al. (*Predict students' dropout and academic success*, repositorio UCI, id 697):
+  **4.424 estudiantes** de un instituto politécnico de Portugal y **34 variables de entrada** (demográficas,
+  socioeconómicas, académicas de ingreso, rendimiento del 1.er y 2.º semestre, y macroeconómicas).
+- **Distribución de la clase objetivo:** Graduate 49,9 %, Dropout 32,1 %, Enrolled 17,9 %. Está **desbalanceada**,
+  por eso se usa **SMOTE** (dentro de cada fold de la validación cruzada, para no filtrar datos) y métricas como
+  macro F1, balanced accuracy y *recall* de Dropout (la clase que un sistema de alerta temprana no puede dejar pasar).
+- **Modelo final:** Random Forest + SMOTE + calibración sigmoide de probabilidades.
+  En el 20 % de prueba (885 estudiantes): macro F1 ≈ 0,715 y *recall* de Dropout ≈ 0,764.
 
 ---
 
@@ -32,10 +50,11 @@ los datos, comparamos modelos, escogemos uno y lo exportamos. La app usa el mode
 - Los archivos que te entregó el profesor:
   - `requirements.txt`, `license.txt`, `ClasificadorDesertor.spec` y `construir.ps1`
   - los **3 archivos `.py`** de la carpeta `src/clasificador_desertores/`
-  - la carpeta `notebooks/` (con `entrenamiento_pycaret.ipynb`)
+  - la carpeta `notebooks/` (con `Estudiantes_entrenamiento_pycaret.ipynb`)
   - la carpeta `instalador/` (con `ClasificadorDesertor.iss`)
   - (opcional) la carpeta `legacy/`
 - **VS Code** con las extensiones *Python* y *Jupyter* (para el cuaderno).
+- **Conexión a internet** la primera vez que ejecutes el cuaderno (descarga el dataset del repositorio UCI).
 
 No necesitas descargar Python desde python.org: uv se encarga de eso.
 
@@ -47,40 +66,44 @@ No necesitas descargar Python desde python.org: uv se encarga de eso.
 uv python install 3.10
 ```
 
-> ⚠️ **¿Por qué 3.10 y no la última versión?** PyCaret 3.3 solo funciona con Python 3.9, 3.10 y 3.11.
-> Con 3.12 o superior la instalación falla.
-
 ---
 
-### Paso 1 · Crear el proyecto
+### Paso 1 · Obtener el proyecto
 
-Abre PowerShell en la carpeta donde quieras guardar el proyecto (por ejemplo, Documentos) y escribe:
+**Opción A (recomendada): clonar el repositorio.** Ya trae el código, el cuaderno, el modelo y el icono:
 
 ```powershell
-uv init clasificador-desertores --package --python 3.10
-cd clasificador-desertores
+git clone https://github.com/santiagocuellarandrade/pycaret-inno.git
+cd pycaret-inno
+uv sync
 ```
 
-`--package` hace que uv cree la carpeta `src/clasificador_desertores/`. **Todos los pasos siguientes
-se hacen desde dentro de `clasificador-desertores`.**
+`uv sync` crea la carpeta `.venv` e instala todas las librerías. Con esto puedes saltar al **paso 5** (o al 6 si
+no quieres reentrenar, porque `modelo/` ya viene con el modelo exportado).
 
-> ⚠️ Escribe el nombre **exactamente igual**: `clasificador-desertores`. El código depende de que la
-> carpeta se llame `src/clasificador_desertores` (con guion bajo).
->
-> ⚠️ **Nunca** llames al proyecto `pycaret`: Python confundiría tu proyecto con la librería.
+**Opción B: crear el proyecto desde cero.**
+
+```powershell
+uv init pycaret-inno --package --name clasificador-desertores --python 3.10
+cd pycaret-inno
+```
+
+- `pycaret-inno` es la **carpeta** del proyecto; todos los pasos siguientes se hacen desde dentro de ella.
+- `--package` crea la carpeta `src/`, y `--name clasificador-desertores` hace que el paquete de Python se llame
+  `clasificador_desertores`, que es el nombre que usa el código.
 
 ---
 
 ### Paso 2 · Instalar las librerías
 
-Copia `requirements.txt` dentro de `clasificador-desertores/` (junto a `pyproject.toml`) y escribe:
+(Solo en la opción B; con la opción A ya lo hizo `uv sync`.) Copia `requirements.txt` dentro de `pycaret-inno/` (junto a `pyproject.toml`) y escribe:
 
 ```powershell
 uv add -r requirements.txt
 uv add --dev pyinstaller ipykernel
 ```
 
-El primero instala PyCaret y CustomTkinter (tarda unos minutos: PyCaret es grande).
+El primero instala PyCaret, CustomTkinter, seaborn y ucimlrepo (tarda unos minutos: PyCaret es grande).
 El segundo instala herramientas que solo se usan al desarrollar: PyInstaller (para crear el `.exe`)
 e ipykernel (para usar el notebook en VS Code).
 
@@ -88,17 +111,17 @@ e ipykernel (para usar el notebook en VS Code).
 
 ### Paso 3 · Copiar el código y los archivos
 
-Copia los archivos a estas ubicaciones. Cuando te pregunte si quieres reemplazar `__init__.py`, responde **sí**:
+(Solo en la opción B.) Copia los archivos a estas ubicaciones. Cuando te pregunte si quieres reemplazar `__init__.py`, responde **sí**:
 
 ```
-clasificador-desertores/
+pycaret-inno/
 ├── ClasificadorDesertor.spec    ← receta de PyInstaller
 ├── construir.ps1                ← hace los pasos 8 y 9 de una vez
 ├── license.txt                  ← licencia que muestra el instalador
 ├── instalador/
 │   └── ClasificadorDesertor.iss     ← receta de Inno Setup
 ├── notebooks/
-│   └── entrenamiento_pycaret.ipynb   ← explora, entrena y exporta el modelo
+│   └── Estudiantes_entrenamiento_pycaret.ipynb   ← explora, entrena, calibra y exporta el modelo
 └── src/clasificador_desertores/
     ├── __init__.py
     ├── core.py                  ← carga el modelo y predice
@@ -108,6 +131,8 @@ clasificador-desertores/
 ---
 
 ### Paso 4 · Registrar los comandos en `pyproject.toml`
+
+(Solo en la opción B; en el repositorio ya está hecho.)
 
 Abre `pyproject.toml` y busca estas líneas que creó uv:
 
@@ -124,16 +149,21 @@ app = "clasificador_desertores.app:main"
 ```
 
 Guarda el archivo. A la izquierda va el nombre del comando (`uv run app`) y a la derecha
-la función de Python que ejecuta. Después escribe `uv sync` para que uv registre el cambio.
+la función de Python que ejecuta. Además, agrega estas líneas para que uv use el paquete correcto:
 
-> ⚠️ Este es el paso que más se olvida. Si te sale `Failed to spawn: app`, revisa este paso.
+```toml
+[tool.uv.build-backend]
+module-name = "clasificador_desertores"
+```
+
+Después escribe `uv sync` para que uv registre el cambio.
 
 ---
 
 ### Paso 5 · Explorar, entrenar y exportar el modelo (cuaderno) 📓
 
-1. Abre la carpeta `clasificador-desertores` en VS Code.
-2. Abre `notebooks/entrenamiento_pycaret.ipynb`.
+1. Abre la carpeta `pycaret-inno` en VS Code.
+2. Abre `notebooks/Estudiantes_entrenamiento_pycaret.ipynb`.
 3. Arriba a la derecha, en **Select Kernel**, escoge el Python de `.venv`.
 4. Ejecuta las celdas **en orden** (o *Run All*).
 
@@ -141,19 +171,23 @@ El cuaderno:
 
 | Paso | Qué hace |
 |---|---|
-| 2–3 | Carga Iris y lo explora: conteos, estadísticas y gráficas por especie |
-| 4 | `setup()`: separa 70 % entrenamiento / 30 % prueba |
-| 5 | `compare_models()`: entrena unos 15 algoritmos y los ordena por accuracy |
-| 6 | Mira los mejores: matriz de confusión, fronteras de decisión, `tune_model()` |
-| 7 | ✋ **Tú escoges** el modelo a exportar (`modelo_elegido = ...`) |
-| 8 | Lo evalúa con los datos de prueba |
-| 9 | `finalize_model()` + `save_model()`: lo **exporta** a la carpeta `modelo/` |
-| 10 | Lo carga como lo hace la app y prueba tres flores |
+| 1 | Importa las librerías |
+| 2 | Descarga el dataset (UCI id 697), estandariza los nombres de columnas, quita `Previous_qualification_grade` y `Admission_grade` y verifica nulos y duplicados |
+| 3 | Explora los datos: distribución de la clase objetivo, estadísticas, promedios por clase y gráficas |
+| 4 | Preprocesamiento y partición 80 % entrenamiento / 20 % prueba; compara variantes (estandarización, Yeo-Johnson, PCA, SMOTE) |
+| 5 | `compare_models()` y tabla de decisión con validación cruzada y SMOTE dentro de cada fold |
+| 6 | Explora los mejores modelos: hiperparámetros, matriz de confusión, ajuste y calibración de probabilidades |
+| 7 | ✋ **Escoges** el modelo a exportar (`modelo_elegido = ...`; el proyecto usa Random Forest) |
+| 8 | Evalúa con los datos de prueba: métricas e intervalos de confianza (bootstrap) |
+| 9 | **Exporta** el modelo a la carpeta `modelo/` y completa `metricas.json` |
+| 10 | Carga el modelo como lo hace la app y prueba tres estudiantes |
+
+Al final del cuaderno hay un mensaje **"Listo. Ahora abre la app en la terminal"**.
 
 Al final aparece la carpeta `modelo/` en la raíz del proyecto con dos archivos:
 
-- `modelo_iris.pkl` → el modelo exportado (el pipeline completo de PyCaret).
-- `metricas.json` → algoritmo, accuracy y F1 en prueba, y rangos de las medidas (los muestra la app).
+- `modelo_desercion.pkl` → el modelo exportado (el pipeline completo de PyCaret: preprocesamiento + Random Forest + calibración).
+- `metricas.json` → algoritmo, métricas de validación cruzada y de prueba (con sus intervalos de confianza), las 34 columnas de entrada, las clases, el tipo de cada variable, las categorías de las nominales y el rango de cada variable (los usa la app).
 
 > 💡 El cuaderno importa `CARPETA_MODELO` y `NOMBRE_MODELO` desde `core.py`. Así el cuaderno
 > guarda el modelo exactamente donde la app lo va a buscar, sin escribir rutas a mano.
@@ -170,10 +204,13 @@ La ventana aparece de inmediato y abajo dice *"Cargando el modelo de PyCaret…"
 segundos (PyCaret es pesado y se carga en segundo plano para que la ventana no se congele).
 Luego puedes:
 
-- mover los controles o escribir las medidas: la predicción se actualiza sola,
-- probar los ejemplos de la izquierda (setosa, versicolor, virginica),
-- ver la probabilidad de cada especie,
-- cambiar entre modo claro y oscuro.
+- llenar los datos del estudiante en las **seis pestañas** (1.er semestre, 2.º semestre, Ingreso,
+  Perfil personal, Situación económica y Contexto del país); cada campo muestra su rango válido,
+- cargar los **ejemplos** de abajo (perfil de riesgo bajo y de riesgo alto) para probar rápido,
+- presionar **Predecir** y ver en el panel derecho la clase más probable y la probabilidad de cada resultado
+  (Deserción, Sigue matriculado y Graduación),
+- ajustar el **umbral de alerta** (30 % por defecto): la app avisa cuando la probabilidad de deserción lo supera,
+- consultar las métricas del modelo y la advertencia de que la clase *Sigue matriculado* es la menos confiable.
 
 ---
 
@@ -183,7 +220,7 @@ Crea un icono en formato `.ico` (por ejemplo en <https://www.icoconverter.com/> 
 con los tamaños 16, 32, 48 y 256) y guárdalo exactamente aquí:
 
 ```
-clasificador-desertores/assets/icono.ico
+pycaret-inno/assets/icono.ico
 ```
 
 Lo usan tres cosas: la ventana de la app, el `.exe` y el instalador.
@@ -234,16 +271,13 @@ escritorio si el usuario quiere) y aparece en *Agregar o quitar programas* para 
 > powershell -ExecutionPolicy Bypass -File construir.ps1
 > ```
 
-> 🛡️ Al abrir el instalador en otro PC, Windows puede mostrar *"Windows protegió su PC"*. Es normal
-> porque el programa no tiene firma digital (cuesta dinero): clic en **Más información → Ejecutar de todas formas**.
-
 ---
 
 ## 🔁 ¿Qué repetir cuando cambio algo?
 
 | Cambié... | Repetir |
 |---|---|
-| Los datos o el modelo escogido en el cuaderno | Paso 5 (cuaderno) → 8 → 9 |
+| Los datos, el preprocesamiento o el modelo escogido en el cuaderno | Paso 5 (cuaderno) → 8 → 9 |
 | Solo la interfaz (`app.py`) | Paso 8 → 9 |
 | El icono, la licencia o la versión | Paso 8 → 9 |
 
@@ -255,19 +289,20 @@ en `app.py`. **No** cambies el `AppId`: así Windows actualiza la versión anter
 ## Así queda el proyecto al final
 
 ```
-clasificador-desertores/
+pycaret-inno/
 ├── pyproject.toml              ← nombre, librerías y comandos del proyecto
 ├── uv.lock                     ← versiones exactas (lo crea uv, no se edita)
 ├── requirements.txt
+├── requirements-mac.txt        ← pasos extra para Mac (Homebrew + libomp)
 ├── .python-version             ← 3.10
 ├── .venv/                      ← entorno virtual (lo crea uv)
 ├── ClasificadorDesertor.spec   ← receta de PyInstaller
 ├── construir.ps1               ← construye todo de una vez
 ├── license.txt
 ├── assets/icono.ico            ← lo pones tú (paso 7)
-├── notebooks/entrenamiento_pycaret.ipynb   ← fase exploratoria
+├── notebooks/Estudiantes_entrenamiento_pycaret.ipynb   ← fase exploratoria
 ├── modelo/                     ← lo exporta el cuaderno (paso 5)
-│   ├── modelo_iris.pkl
+│   ├── modelo_desercion.pkl
 │   └── metricas.json
 ├── src/clasificador_desertores/      ← el código
 ├── build/                      ← temporal de PyInstaller (se puede borrar)
@@ -284,9 +319,11 @@ clasificador-desertores/
 | Mensaje | Qué pasó | Solución |
 |---|---|---|
 | `Failed to spawn: app` | No se registró el comando | Revisa el **paso 4**, guarda `pyproject.toml` y ejecuta `uv sync` |
-| `No encontré el modelo. Ejecuta primero el cuaderno…` | No se ha exportado el modelo | Ejecuta el cuaderno completo (**paso 5**), incluido el paso 9 del cuaderno |
+| `No encontré el modelo. Ejecuta primero el cuaderno…` | No se ha exportado el modelo | Ejecuta el cuaderno completo (**paso 5**), incluido el paso de exportar |
 | Cuaderno: `No module named 'pycaret'` o `'clasificador_desertores'` | VS Code usa otro Python | En **Select Kernel** escoge el de `.venv` |
+| Cuaderno: no puede descargar el dataset | Sin internet o el repositorio UCI no responde | Revisa tu conexión y vuelve a ejecutar la celda de carga |
 | Cuaderno: `name 'top3' is not defined` (o similar) | Se ejecutó una celda sin las anteriores | *Restart* el kernel y *Run All* |
+| La columna AUC de `compare_models()` sale en `0.000` | Falla conocida de PyCaret al calcular el AUC multiclase | No es un error del modelo: ignora esa columna (el cuaderno recalcula el AUC con scikit-learn) |
 | `No solution found when resolving dependencies` al instalar PyCaret | El proyecto se creó con otro Python | Revisa que `.python-version` diga `3.10`. Si no, repite el **paso 1** con `--python 3.10` |
 | `ModuleNotFoundError: No module named 'clasificador_desertores'` | El proyecto tiene otro nombre o los archivos están en otra carpeta | Revisa los **pasos 1 y 3** |
 | El `.exe` no abre o se cierra sin decir nada | Falta algo dentro del ejecutable | Cambia `console=False` por `console=True` en el `.spec`, repite el paso 8 y abre el `.exe` desde PowerShell para ver el error |
@@ -313,10 +350,10 @@ La carpeta `legacy/` tiene la primera versión: Tkinter clásico, la ruta del mo
 | Antes (`legacy/`) | Ahora |
 |---|---|
 | Rutas absolutas: solo funcionaba en un PC | Rutas relativas: funciona en cualquier PC |
-| Etiquetas `0, 1, 2` | Nombres de especie |
-| Solo la clase predicha | Clase + probabilidad de cada especie |
+| Etiquetas numéricas (`0, 1, 2`) | Nombres de clase (Deserción, Sigue matriculado, Graduación) |
+| Solo la clase predicha | Clase + probabilidad de cada resultado + alerta con umbral ajustable |
 | La ventana se congela mientras carga PyCaret | El modelo carga en segundo plano |
-| Tkinter clásico | CustomTkinter, modo claro/oscuro |
+| Tkinter clásico | CustomTkinter, con los campos organizados en pestañas |
 | `--onefile` (abre lento) | Carpeta + instalador de Inno Setup |
 
 ---
@@ -337,8 +374,10 @@ La carpeta `legacy/` tiene la primera versión: Tkinter clásico, la ruta del mo
 
 ## Ideas de ejercicios
 
-1. En el cuaderno, exporta otro modelo (`modelo_elegido = arbol` o `ajustado`), abre la app y compara las probabilidades.
-2. Agrega un botón **"Guardar resultado"** que escriba la predicción en un archivo CSV.
-3. Cambia los colores de cada especie en el diccionario `ESPECIES` de `app.py`.
-4. Agrega una pestaña que cargue un CSV con muchas flores y las clasifique todas (`predict_model` acepta un DataFrame completo).
-5. Adapta todo a otro dataset de clasificación (vinos, cáncer de mama, Titanic…): cambia la carga de datos del cuaderno, `COLUMNAS` en `core.py` y las etiquetas de la app.
+1. En el cuaderno, exporta otro modelo (por ejemplo Gradient Boosting o el Random Forest ajustado con `tune_model()`), abre la app y compara las probabilidades.
+2. Cambia el **umbral de alerta** de la app (por ejemplo de 30 % a 40 %) y observa cuántos estudiantes de ejemplo pasan a estar en alerta: más umbral = menos falsas alarmas pero más desertores que se escapan.
+3. Agrega un botón **"Guardar resultado"** que escriba la predicción en un archivo CSV.
+4. Agrega una pestaña que cargue un CSV con muchos estudiantes y los clasifique todos (`predict_model` acepta un DataFrame completo).
+5. Prueba `SMOTENC`, que maneja las variables nominales de forma nativa, y compara con SMOTE aplicado sobre variables ya codificadas con One-Hot.
+6. Exporta un segundo modelo **sin las variables del 2.º semestre** para dar una alerta al final del primer semestre, y mide cuánto baja el macro F1.
+7. Adapta todo a otro dataset de clasificación (vinos, cáncer de mama, Titanic…): cambia la carga de datos del cuaderno, `COLUMNAS` en `core.py` y las etiquetas de la app.
